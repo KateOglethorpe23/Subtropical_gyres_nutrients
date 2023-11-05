@@ -23,7 +23,7 @@ load WOA18_K.mat                             %eddy diffusivity (m2 s-1)
 K_iso_z = WOA18_K.K_WOA;
 load global_kappa_epsilon_for_Katherine      %diapycnal diffusivity (m2 s-1)    
 K_dia_z = A4.K;
-load chl_final.mat %from 'Chl_Feb_Aqua_Modis.txt' -- chlorophyll conc (X)
+load chl_final.mat %from 'Chl_Feb_Aqua_Modis.txt' -- chlorophyll conc (mg m-3)
 
 %dimensions
 lon_woa = ncread(T_file, 'lon');             %N, T, S, w_mld 
@@ -45,28 +45,21 @@ N_z = permute(N_z, [2,1,3]);
 w_mld_z = permute(w_mld_z, [2, 1]);
 K_iso_z = permute(K_iso_z, [2,1,3]);
 
-% %infill missing K_dia at 100m
-% K_dia_new = nan(length(lat_Whalen),...       
-%     length(lon_Whalen),length(z_Whalen)+1);                     
-% K_dia_new(:,:,1) = K_dia_z(:,:,1); 
-% K_dia_new(:,:,2:10) = K_dia_z;
-% z_Whalen_new = nan(length(z_Whalen)+1,1); 
-% z_Whalen_new(1) = 0;
-% z_Whalen_new(2:10) = z_Whalen;
+%infill missing K_dia in top 300m
+K_dia_new = nan(length(lat_Whalen),...       
+    length(lon_Whalen),length(z_Whalen)+1);                     
+K_dia_new(:,:,1) = K_dia_z(:,:,1); 
+K_dia_new(:,:,2:10) = K_dia_z;
+z_Whalen_new = nan(length(z_Whalen)+1,1); 
+z_Whalen_new(1) = 0;
+z_Whalen_new(2:10) = z_Whalen;
 
 %shift K_iso lonxlat grid
 K_iso_2nd = K_iso_z(:,[1:length(lon_Groeskamp)/2],:);
 K_iso_1st = K_iso_z(:,[(length(lon_Groeskamp)/2)+1:length(lon_Groeskamp)],:);
 K_iso_new = [K_iso_1st K_iso_2nd];
 
-% %shift Kdia lonxlat grid
-% lon_2nd = lon_Whalen([1:length(lon_Whalen)/2]);
-% lon_1st = -flip(lon_2nd);
-% lon_new = [lon_1st lon_2nd];   
-% K_dia_2nd = K_dia_new(:,[1:length(lon_Whalen)/2],:);
-% K_dia_1st = K_dia_new(:,[(length(lon_Whalen)/2):length(lon_Whalen)-1],:);
-% K_dia_new = [K_dia_1st K_dia_2nd];
-
+%shift Kdia lonxlat grid
 lon_2nd = lon_Whalen([1:length(lon_Whalen)/2]);
 lon_1st = -flip(lon_2nd);
 lon_new = [lon_1st lon_2nd];  
@@ -84,8 +77,6 @@ K_dia_1deg = interp3(lon_new, lat_Whalen,z_Whalen, K_dia_new, ...
 glob_lon = lon_woa                            
 glob_lat = lat_woa
 z_1000 = -z_woa(1:47); 
-% z_Whalen = -z_Whalen_new(1:6);
-
 z_Whalen = -z_Whalen(1:4);
 
 %top 1000m
@@ -94,7 +85,6 @@ T_z = T_z(:,:, 1:47);
 N_z = N_z(:,:, 1:47);
 K_iso_z = K_iso_new(:,:, 1:47);
 K_dia_z = K_dia_1deg(:,:, 1:4);
-
 
 %% Load mask for subtropical gyres
 
@@ -170,7 +160,7 @@ set(gca,'Fontsize',9)
 
 %% Convert N conc (mg m-3) to N (mol m-3)
 
-pressure (dbar) of upper ocean of gyre
+%pressure (dbar) of upper ocean of gyre
 p_z = nan([length(glob_lat) length(glob_lon) 47]);                        
 for lat =1:length(glob_lat);
    for lon = 1:length(glob_lon);               
